@@ -67,7 +67,7 @@ export async function submitScore(
   }
 }
 
-/** Fetch leaderboard page. Cached 60s per (page). */
+/** Fetch leaderboard page. Cached 60s per (page). When offline, returns cache if available. */
 export async function getLeaderboard(
   page: number = 0,
   pageSize: number = LEADERBOARD_PAGE_SIZE
@@ -78,6 +78,11 @@ export async function getLeaderboard(
   const now = Date.now();
   if (cache && cache.page === page && now - cache.ts < LEADERBOARD_CACHE_MS) {
     return { ok: true, list: cache.list };
+  }
+  const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if (offline) {
+    if (cache && cache.page === page) return { ok: true, list: cache.list };
+    return { ok: false, error: 'Offline' };
   }
   try {
     const params = new URLSearchParams({

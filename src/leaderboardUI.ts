@@ -84,13 +84,13 @@ export function initLeaderboard(): void {
   }
 
   (window as any).leaderboard = {
-    submitRun(timeSec: number, levelsCompleted: number): void {
+    submitRun(timeSec: number, levelsCompleted: number): Promise<{ ok: boolean; error?: string }> {
       const runTimeMs = Math.round(timeSec * 1000);
       const handle = handleInput?.value?.trim() || getHandle();
       setHandle(handle);
-      submitScore(runTimeMs, levelsCompleted, handle).then((r) => {
-        if (!r.ok) return;
-        load(0);
+      return submitScore(runTimeMs, levelsCompleted, handle).then((r) => {
+        if (r.ok) load(0);
+        return r;
       });
     },
     refreshLeaderboard(): void {

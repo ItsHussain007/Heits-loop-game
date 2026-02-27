@@ -3,26 +3,25 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const MIN_MS = 30000;
-const MAX_MS = 3600000;
+// No time limit: accept any run that completes all levels
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors() });
   }
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
+    return json({ error: 'Method not allowed' }, 405, cors());
   }
 
   let body: { seasonId?: string; buildId?: string; userHandle?: string; runTimeMs?: number; levelsCompleted?: number };
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'Invalid JSON' }, 400);
+    return json({ error: 'Invalid JSON' }, 400, cors());
   }
 
   const { seasonId, buildId, userHandle, runTimeMs, levelsCompleted } = body;
-  const totalLevels = parseInt(Deno.env.get('TOTAL_LEVELS') ?? '12', 10);
+  const totalLevels = parseInt(Deno.env.get('TOTAL_LEVELS') ?? '3', 10);
 
   if (
     typeof seasonId !== 'string' || !seasonId ||
@@ -30,13 +29,13 @@ Deno.serve(async (req) => {
     typeof userHandle !== 'string' || !userHandle ||
     typeof runTimeMs !== 'number' || Number.isNaN(runTimeMs)
   ) {
-    return json({ error: 'Missing or invalid seasonId, buildId, userHandle, runTimeMs' }, 400);
+    return json({ error: 'Missing or invalid seasonId, buildId, userHandle, runTimeMs' }, 400, cors());
   }
   if (levelsCompleted !== totalLevels) {
-    return json({ error: `Only full runs accepted (levelsCompleted must be ${totalLevels})` }, 400);
+    return json({ error: `Only full runs accepted (levelsCompleted must be ${totalLevels})` }, 400, cors());
   }
-  if (runTimeMs < MIN_MS || runTimeMs > MAX_MS) {
-    return json({ error: `runTimeMs must be between ${MIN_MS} and ${MAX_MS}` }, 400);
+  if (runTimeMs <= 0 || !Number.isFinite(runTimeMs)) {
+    return json({ error: 'runTimeMs must be a positive number' }, 400, cors());
   }
 
   const supabase = createClient(
@@ -74,7 +73,7 @@ Deno.serve(async (req) => {
       );
     if (upsertError) {
       console.error(upsertError);
-      return json({ error: 'Failed to save time' }, 500);
+      return json({ error: 'Failed to save time' }, 500, cors());
     }
   }
 
