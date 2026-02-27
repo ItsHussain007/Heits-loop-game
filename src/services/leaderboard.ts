@@ -5,6 +5,7 @@
 
 import {
   SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   SEASON_ID,
   BUILD_ID,
   TOTAL_LEVELS,
@@ -13,6 +14,12 @@ import {
 } from '../config';
 
 const FUNCTIONS = `${SUPABASE_URL}/functions/v1`;
+
+function authHeaders(): HeadersInit {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (SUPABASE_ANON_KEY) h['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+  return h;
+}
 
 export type LeaderboardEntry = { rank: number; userHandle: string; bestTimeMs: number };
 
@@ -35,7 +42,7 @@ export async function submitScore(
   try {
     const res = await fetch(`${FUNCTIONS}/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({
         seasonId: SEASON_ID,
         buildId: BUILD_ID,
@@ -79,7 +86,7 @@ export async function getLeaderboard(
       page: String(page),
       pageSize: String(pageSize),
     });
-    const res = await fetch(`${FUNCTIONS}/leaderboard?${params}`);
+    const res = await fetch(`${FUNCTIONS}/leaderboard?${params}`, { headers: authHeaders() });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       return { ok: false, error: data?.error ?? `HTTP ${res.status}` };

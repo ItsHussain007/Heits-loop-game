@@ -49,9 +49,11 @@ function escapeHtml(s: string): string {
   return div.innerHTML;
 }
 
-function showUnavailable(container: HTMLElement, unavailableEl: HTMLElement): void {
+function showUnavailable(container: HTMLElement, unavailableEl: HTMLElement, errorReason?: string): void {
   container.innerHTML = '';
   unavailableEl.style.display = 'block';
+  const detail = document.getElementById('leaderboard-error-detail');
+  if (detail) detail.textContent = errorReason ?? '';
 }
 
 export function initLeaderboard(): void {
@@ -66,7 +68,7 @@ export function initLeaderboard(): void {
   const load = async (page = 0) => {
     const r = await getLeaderboard(page, LEADERBOARD_PAGE_SIZE);
     if (r.ok) renderList(r.list, listEl, unavailableEl);
-    else showUnavailable(listEl, unavailableEl);
+    else showUnavailable(listEl, unavailableEl, r.error);
   };
 
   refreshBtn?.addEventListener('click', () => load(0));
