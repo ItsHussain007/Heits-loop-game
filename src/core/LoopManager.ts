@@ -1,5 +1,3 @@
-import Phaser from 'phaser';
-
 export class LoopManager {
     private totalTicks: number = 0;
     private loopDurationTicks: number; // 20s * 20 ticks/sec

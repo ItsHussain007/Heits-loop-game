@@ -566,7 +566,7 @@ export class GameScene extends Phaser.Scene {
             const loops = this.registry.get('globalLoops');
             const alarms = this.registry.get('globalAlarms');
 
-            (window as any).gameUI.showSummary(time, loops, alarms);
+            (window as any).gameUI.showSummary(time, loops, alarms, LEVELS.length);
         } else {
             // Transition to next level
             this.loadLevel(this.currentLevelIndex + 1);

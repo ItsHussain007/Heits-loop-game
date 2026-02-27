@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 
 export class Player {
     public sprite: Phaser.Physics.Arcade.Sprite;
-    private scene: Phaser.Scene;
     private speed: number = 200;
 
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -13,8 +12,6 @@ export class Player {
     private keyE: Phaser.Input.Keyboard.Key;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        this.scene = scene;
-
         // Create a 32x32 blue square for the player
         const graphics = scene.make.graphics({ x: 0, y: 0 });
         graphics.fillStyle(0x0000ff, 1);

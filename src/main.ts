@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameScene } from './scenes/GameScene';
+import { initLeaderboard } from './leaderboardUI';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -25,4 +26,5 @@ const config: Phaser.Types.Core.GameConfig = {
     }
 };
 
+initLeaderboard();
 new Phaser.Game(config);

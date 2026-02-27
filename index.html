@@ -135,6 +135,22 @@
       animation: blink 1s infinite;
     }
 
+    #leaderboard-panel {
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #555;
+      color: #fff;
+      padding: 12px;
+      width: 280px;
+      max-height: 320px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    #leaderboard-panel h3 { margin: 0 0 10px 0; color: #ffaa00; font-size: 16px; }
+    #leaderboard-list { overflow-y: auto; max-height: 220px; }
+    #leaderboard-unavailable { display: none; color: #f88; margin: 8px 0; }
+    #leaderboard-panel input { width: 100%; box-sizing: border-box; padding: 6px; margin-bottom: 8px; background: #222; color: #fff; border: 1px solid #555; }
+
     @keyframes blink {
       0% {
         opacity: 1;
@@ -205,6 +221,13 @@
     <button id="btn-start" class="menu-btn">START SPEEDRUN</button>
     <button id="btn-how-to" class="menu-btn">HOW IT WORKS</button>
     <button id="btn-reset-pb" class="menu-btn" style="background-color: #511;">RESET PB</button>
+    <div id="leaderboard-panel">
+      <h3>LEADERBOARD</h3>
+      <input id="leaderboard-handle" type="text" placeholder="Your name" maxlength="64" />
+      <div id="leaderboard-unavailable">Leaderboard unavailable</div>
+      <div id="leaderboard-list"></div>
+      <button id="btn-leaderboard-refresh" class="menu-btn" style="width:100%;margin:10px 0 0 0;padding:8px;font-size:14px;">Refresh</button>
+    </div>
   </div>
 
   <!-- How It Works Overlay -->
@@ -283,18 +306,23 @@
   hideMainMenu: function () {
   document.getElementById('main-menu').style.display = 'none';
   },
-  showSummary: function (time, loops, alarms) {
+  showSummary: function (time, loops, alarms, levelsCompleted) {
   document.getElementById('summary-screen').style.display = 'flex';
   document.getElementById('stat-time').innerText = time.toFixed(1) + 's';
   document.getElementById('stat-loops').innerText = loops;
   document.getElementById('stat-alarms').innerText = alarms;
 
-  let pb = localStorage.getItem('pb_time');
-  let isNewRecord = false;
-  if (!pb || time < parseFloat(pb)) { localStorage.setItem('pb_time', time.toFixed(1)); pb=time.toFixed(1);
-    isNewRecord=true; } document.getElementById('stat-pb').innerText=parseFloat(pb).toFixed(1) + 's' ; const
-    newRecordLabel=document.getElementById('new-record-label'); if (isNewRecord) { newRecordLabel.style.display='inline'
-    ; } else { newRecordLabel.style.display='none' ; } },
+  var pb = localStorage.getItem('pb_time');
+  var isNewRecord = false;
+  if (!pb || time < parseFloat(pb)) { localStorage.setItem('pb_time', time.toFixed(1)); pb = time.toFixed(1);
+    isNewRecord = true; }
+  document.getElementById('stat-pb').innerText = parseFloat(pb || '0').toFixed(1) + 's';
+  var newRecordLabel = document.getElementById('new-record-label');
+  if (isNewRecord) { newRecordLabel.style.display = 'inline'; } else { newRecordLabel.style.display = 'none'; }
+  if (typeof levelsCompleted === 'number' && window.leaderboard && window.leaderboard.submitRun) {
+    window.leaderboard.submitRun(time, levelsCompleted);
+  }
+  },
   hideSummary: function () {
     document.getElementById('summary-screen').style.display = 'none';
   },
