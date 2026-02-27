@@ -34,7 +34,19 @@ export class Player {
         }
     }
 
+    private isInputFocused(): boolean {
+        if (typeof document === 'undefined') return false;
+        const el = document.activeElement;
+        if (!el || !(el as HTMLElement).tagName) return false;
+        const tag = (el as HTMLElement).tagName.toUpperCase();
+        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable;
+    }
+
     updateVelocity() {
+        if (this.isInputFocused()) {
+            this.sprite.setVelocity(0, 0);
+            return;
+        }
         let vx = 0;
         let vy = 0;
 
@@ -47,6 +59,9 @@ export class Player {
     }
 
     getInputState() {
+        if (this.isInputFocused()) {
+            return { up: false, down: false, left: false, right: false, interact: false };
+        }
         return {
             up: this.cursors.up.isDown || this.keyW.isDown,
             down: this.cursors.down.isDown || this.keyS.isDown,

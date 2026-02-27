@@ -75,6 +75,10 @@ export function initLeaderboard(): void {
     handleInput.value = getHandle();
     handleInput.addEventListener('change', () => setHandle(handleInput.value));
     handleInput.addEventListener('blur', () => setHandle(handleInput.value));
+    // Keep key events in the input so the game doesn't capture WASD, E, R, Space, Ctrl+C/V, etc.
+    ['keydown', 'keyup', 'keypress'].forEach((ev) => {
+      handleInput.addEventListener(ev, (e) => e.stopPropagation(), false);
+    });
   }
 
   (window as any).leaderboard = {

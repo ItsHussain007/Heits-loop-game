@@ -115,12 +115,20 @@ export class GameScene extends Phaser.Scene {
             padding: { x: 3, y: 3 }
         }).setOrigin(0.5).setDepth(150).setVisible(false);
 
-        // Keyboard Shortcuts
+        // Keyboard Shortcuts (ignore when typing in an input, e.g. leaderboard name)
+        const isInputFocused = () => {
+            const el = document.activeElement as HTMLElement | null;
+            if (!el?.tagName) return false;
+            const tag = el.tagName.toUpperCase();
+            return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+        };
         if (this.input.keyboard) {
             this.input.keyboard.on('keydown-R', () => {
+                if (isInputFocused()) return;
                 if (this.registry.get('runActive')) this.loadLevel(this.currentLevelIndex);
             });
             this.input.keyboard.on('keydown-SPACE', () => {
+                if (isInputFocused()) return;
                 if (this.registry.get('runActive') && !this.won) {
                     this.completeLoop();
                 }

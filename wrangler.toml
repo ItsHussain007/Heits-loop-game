@@ -1,0 +1,4 @@
+# Static Pages only — no Workers, no Cloudflare Vite plugin.
+# Tells Cloudflare to use the existing dist/ output from "npm run build".
+name = "hiest-loop-game"
+pages_build_output_dir = "./dist"
