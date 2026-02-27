@@ -1,0 +1,16 @@
+@@ -69,6 +69,7 @@
+     
+     // 1. Check Distance
+     const dist = cameraPos.distance(targetCenter);
++    // console.log(`[Camera L5] dist=${dist.toFixed(2)}, range=${this.range}`);
+     if (dist > this.range) return false;
+ 
+     // 2. Check Angle
+@@ -83,6 +84,7 @@
+     if (diff < -Math.PI) diff += Phaser.Math.PI2;
+     
+     // FOV is in degrees, convert to radians for comparison
+     const fovRad = Phaser.Math.DegToRad(this.fov);
++    // console.log(`[Camera L5] diffDeg=${Phaser.Math.RadToDeg(diff).toFixed(2)}, fov=${this.fov}`);
+     if (Math.abs(diff) > fovRad / 2) return false;
+ 

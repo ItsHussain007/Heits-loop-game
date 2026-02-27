@@ -1,8 +1,7 @@
-import { LevelData } from './level1';
+import { ExtendedLevelData } from '../types';
 
-export const level3: LevelData = {
-    // Plate + timed door (open for 5 seconds after pressed).
-    // I will encode this in targetPlateId as 'timed:5:plate1'.
+export const level5: ExtendedLevelData = {
+    // Camera + Plate
     spawn: { x: 100, y: 300 },
 
     walls: [
@@ -23,6 +22,11 @@ export const level3: LevelData = {
 
     doors: [
         { targetPlateId: 'plate1', x: 400, y: 250, width: 20, height: 100 }
+    ],
+
+    cameras: [
+        // Camera watches the plate area (moved y to 40 so it doesn't clip into the top wall)
+        { x: 200, y: 40, angle: 90, fov: 45, range: 600, rotationSpeed: 1, rotationBounds: [60, 120] }
     ],
 
     loot: [

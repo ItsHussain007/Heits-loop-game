@@ -6,10 +6,10 @@ export const level2: LevelData = {
 
     walls: [
         // Outer walls
-        { x: 0, y: 0, width: 800, height: 20 },
-        { x: 0, y: 580, width: 800, height: 20 },
+        { x: 0, y: 0, width: 1000, height: 20 },
+        { x: 0, y: 580, width: 1000, height: 20 },
         { x: 0, y: 0, width: 20, height: 600 },
-        { x: 780, y: 0, width: 20, height: 600 },
+        { x: 980, y: 0, width: 20, height: 600 },
 
         // Dividing wall
         { x: 400, y: 0, width: 20, height: 250 },

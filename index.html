@@ -1,26 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Time-Loop Game</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #111;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time-Loop Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #game-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    #ui-layer {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-family: monospace;
+    }
+
+    #btn-mission-info {
+      background-color: #aa0000;
+      color: white;
+      border: 2px solid white;
+      padding: 10px 15px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    #btn-mission-info:hover {
+      background-color: #ff0000;
+    }
+
+    #legend-panel {
+      background-color: rgba(0, 0, 0, 0.85);
+      border: 2px solid white;
+      color: white;
+      padding: 15px;
+      width: 250px;
+      display: none;
+      /* hidden by default */
+    }
+
+    #legend-panel h3 {
+      margin-top: 0;
+      color: #ffaa00;
+    }
+
+    #legend-panel p {
+      margin: 5px 0 15px 0;
+      line-height: 1.4;
+    }
+
+    /* Screen Overlays */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(17, 17, 17, 0.95);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: monospace;
+    }
+
+    .screen-overlay h1 {
+      font-size: 48px;
+      color: #ffaa00;
+      margin-bottom: 10px;
+    }
+
+    .screen-overlay h2 {
+      font-size: 24px;
+      margin-bottom: 30px;
+    }
+
+    .menu-btn {
+      background-color: #333;
+      color: white;
+      border: 2px solid white;
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+      width: 300px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+
+    .menu-btn:hover {
+      background-color: #ffaa00;
+      color: black;
+    }
+
+    .stats-container {
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid #555;
+      padding: 20px;
+      margin-bottom: 30px;
+      font-size: 18px;
+      text-align: left;
+      min-width: 300px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .new-record {
+      color: #00ff00;
+      font-weight: bold;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% {
+        opacity: 1;
       }
-      #game-container {
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+
+      50% {
+        opacity: 0;
       }
-    </style>
-  </head>
-  <body>
-    <div id="game-container"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+
+      100% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container"></div>
+
+  <div id="ui-layer">
+    <button id="btn-mission-info">☰ MISSION INFO</button>
+  </div>
+
+  <!-- Pre-Game Controls Overlay -->
+  <div id="pre-game-controls" class="screen-overlay" style="display: none; z-index: 120;">
+    <h1 style="margin: 0 0 15px 0;">CONTROLS</h1>
+    <div
+      style="max-width: 600px; text-align: left; background: rgba(0,0,0,0.8); padding: 25px; border: 1px solid #555; margin-bottom: 15px; line-height: 1.6; font-size: 18px;">
+      <p><b>WASD / Arrows:</b> Move</p>
+      <p><b>E:</b> Interact (Pick up / Drop)</p>
+      <p><b>SPACE:</b> End loop early (Spawns Clone)</p>
+      <p><b>R:</b> Restart Level (Wipes Clones)</p>
+      <hr style="border-color: #333; margin: 15px 0;">
+      <p style="color: #aaa; font-size: 16px; text-align: center;">Need a reminder mid-game? Click <b>☰ MISSION INFO</b>
+        to pause.</p>
+    </div>
+    <button id="btn-proceed" class="menu-btn" style="background-color: #00aa00;">PROCEED</button>
+  </div>
+
+  <!-- Mid-Game Mission Info (Pause) Overlay -->
+  <div id="mission-info-screen" class="screen-overlay"
+    style="display: none; z-index: 120; background: rgba(0,0,0,0.85);">
+    <h1 style="margin: 0 0 15px 0;">GAME PAUSED</h1>
+    <div
+      style="max-width: 600px; text-align: left; background: rgba(0,0,0,0.8); padding: 25px; border: 1px solid #555; margin-bottom: 15px; line-height: 1.6; font-size: 18px;">
+      <h2 style="margin-top: 0;">MISSION</h2>
+      <p>Use plates to open doors.</p>
+      <p>Steal the Gold (Yellow).</p>
+      <p>Reach the Extract (Purple).</p>
+      <hr style="border-color: #333; margin: 15px 0;">
+      <h2>CONTROLS</h2>
+      <p><b>WASD / Arrows:</b> Move<br>
+        <b>E:</b> Pick Up / Drop<br>
+        <b>SPACE:</b> End loop early<br>
+        <b>R:</b> Restart level
+      </p>
+    </div>
+    <button id="btn-resume-game" class="menu-btn">RESUME</button>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+
+  <!-- Main Menu Overlay -->
+  <div id="main-menu" class="screen-overlay">
+    <h1>TIME-LOOP HEIST</h1>
+    <h2>SPEEDRUN VERTICAL SLICE</h2>
+    <div id="menu-pb" style="margin-bottom: 20px; color: #aaa;">Personal Best: --</div>
+    <button id="btn-start" class="menu-btn">START SPEEDRUN</button>
+    <button id="btn-how-to" class="menu-btn">HOW IT WORKS</button>
+    <button id="btn-reset-pb" class="menu-btn" style="background-color: #511;">RESET PB</button>
+  </div>
+
+  <!-- How It Works Overlay -->
+  <div id="how-it-works-screen" class="screen-overlay" style="display: none; z-index: 110;">
+    <h1 style="margin: 0 0 15px 0;">HOW IT WORKS</h1>
+    <div
+      style="max-width: 600px; text-align: center; background: rgba(0,0,0,0.8); padding: 25px; border: 1px solid #555; margin-bottom: 15px; line-height: 1.6; font-size: 18px;">
+      <p style="margin: 10px 0;">Each loop creates a <b>clone</b> that perfectly repeats your previous actions.</p>
+      <p style="margin: 10px 0;">Use your clones to coordinate impossible heists.</p>
+      <hr style="border-color: #333; margin: 15px 0;">
+      <p style="color: #ffaa00; font-size: 22px; margin: 10px 0;"><b>The Challenge:</b></p>
+      <p style="margin: 10px 0;">Finish all levels in the shortest possible <b>RUN TIME</b>.</p>
+      <p style="margin: 10px 0;">You can retry levels — but the <b>clock never stops</b>.</p>
+      <hr style="border-color: #333; margin: 15px 0;">
+      <p style="font-style: italic; margin: 10px 0;">Plan smarter.<br>Move faster.<br>Optimize everything.</p>
+      <p style="color: #ff0000; font-weight: bold; font-size: 20px; margin: 15px 0 0 0;">One mistake costs time.</p>
+    </div>
+    <button id="btn-close-how-to" class="menu-btn" style="margin: 0;">BACK TO MENU</button>
+  </div>
+
+  <!-- Reset PB Confirm Overlay -->
+  <div id="reset-pb-screen" class="screen-overlay" style="display: none; z-index: 110;">
+    <h1>RESET PERSONAL BEST?</h1>
+    <p style="margin-bottom: 30px; font-size: 20px;">This action cannot be undone.</p>
+    <div style="display: flex; gap: 20px;">
+      <button id="btn-confirm-reset" class="menu-btn" style="background-color: #aa0000; width: 200px;">YES,
+        RESET</button>
+      <button id="btn-cancel-reset" class="menu-btn" style="width: 200px;">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- Summary Overlay -->
+  <div id="summary-screen" class="screen-overlay" style="display: none;">
+    <h1>SPEEDRUN COMPLETE</h1>
+    <h2>RUN SUMMARY <span id="new-record-label" class="new-record" style="display: none;">(NEW RECORD!)</span></h2>
+
+    <div class="stats-container">
+      <div class="stat-row">
+        <span>Total Time:</span>
+        <strong id="stat-time">0.0s</strong>
+      </div>
+      <div class="stat-row" style="color: #aaa; font-size: 14px; margin-bottom: 20px;">
+        <span>Personal Best:</span>
+        <span id="stat-pb">0.0s</span>
+      </div>
+      <div class="stat-row">
+        <span>Loops Used:</span>
+        <strong id="stat-loops">0</strong>
+      </div>
+      <div class="stat-row">
+        <span>Alarms Triggered:</span>
+        <strong id="stat-alarms">0</strong>
+      </div>
+    </div>
+
+    <button id="btn-restart-run" class="menu-btn">RESTART RUN</button>
+  </div>
+
+  <script>
+  // Global Functions for Phaser to interact with HTML UI
+  window.gameUI = {
+  updatePBDisplay: function () {
+  const pb = localStorage.getItem('pb_time');
+  const pbElement = document.getElementById('menu-pb');
+  if (pb) {
+  pbElement.innerText = `Personal Best: ${parseFloat(pb).toFixed(1)}s`;
+  } else {
+  pbElement.innerText = 'Personal Best: --';
+  }
+  },
+  showMainMenu: function () {
+  document.getElementById('main-menu').style.display = 'flex';
+  document.getElementById('summary-screen').style.display = 'none';
+  this.updatePBDisplay();
+  },
+  hideMainMenu: function () {
+  document.getElementById('main-menu').style.display = 'none';
+  },
+  showSummary: function (time, loops, alarms) {
+  document.getElementById('summary-screen').style.display = 'flex';
+  document.getElementById('stat-time').innerText = time.toFixed(1) + 's';
+  document.getElementById('stat-loops').innerText = loops;
+  document.getElementById('stat-alarms').innerText = alarms;
+
+  let pb = localStorage.getItem('pb_time');
+  let isNewRecord = false;
+  if (!pb || time < parseFloat(pb)) { localStorage.setItem('pb_time', time.toFixed(1)); pb=time.toFixed(1);
+    isNewRecord=true; } document.getElementById('stat-pb').innerText=parseFloat(pb).toFixed(1) + 's' ; const
+    newRecordLabel=document.getElementById('new-record-label'); if (isNewRecord) { newRecordLabel.style.display='inline'
+    ; } else { newRecordLabel.style.display='none' ; } },
+  hideSummary: function () {
+    document.getElementById('summary-screen').style.display = 'none';
+  },
+  startSpeedrun: null, // Will be assigned by Phaser
+  pauseGame: null, // Will be assigned by Phaser
+  resumeGame: null  // Will be assigned by Phaser
+  };
+  // Attach HTML button listeners
+  document.getElementById('btn-start').addEventListener('click', () => {
+    window.gameUI.hideMainMenu();
+    document.getElementById('pre-game-controls').style.display = 'flex';
+    });
+
+    document.getElementById('btn-restart-run').addEventListener('click', () => {
+    window.gameUI.hideSummary();
+    document.getElementById('pre-game-controls').style.display = 'flex';
+    });
+
+    document.getElementById('btn-proceed').addEventListener('click', () => {
+    document.getElementById('pre-game-controls').style.display = 'none';
+    if (window.gameUI.startSpeedrun) window.gameUI.startSpeedrun();
+    });
+
+    document.getElementById('btn-mission-info').addEventListener('click', () => {
+    document.getElementById('mission-info-screen').style.display = 'flex';
+    if (window.gameUI.pauseGame) window.gameUI.pauseGame();
+    });
+
+    document.getElementById('btn-resume-game').addEventListener('click', () => {
+    document.getElementById('mission-info-screen').style.display = 'none';
+    if (window.gameUI.resumeGame) window.gameUI.resumeGame();
+    });
+
+    document.getElementById('btn-how-to').addEventListener('click', () => {
+    document.getElementById('how-it-works-screen').style.display = 'flex';
+    document.getElementById('main-menu').style.display = 'none';
+    });
+
+    document.getElementById('btn-close-how-to').addEventListener('click', () => {
+    document.getElementById('how-it-works-screen').style.display = 'none';
+    document.getElementById('main-menu').style.display = 'flex';
+    });
+
+    document.getElementById('btn-reset-pb').addEventListener('click', () => {
+    document.getElementById('reset-pb-screen').style.display = 'flex';
+    document.getElementById('main-menu').style.display = 'none';
+    });
+
+    document.getElementById('btn-cancel-reset').addEventListener('click', () => {
+    document.getElementById('reset-pb-screen').style.display = 'none';
+    document.getElementById('main-menu').style.display = 'flex';
+    });
+
+    document.getElementById('btn-confirm-reset').addEventListener('click', () => {
+    localStorage.removeItem('pb_time');
+    window.gameUI.updatePBDisplay();
+    document.getElementById('reset-pb-screen').style.display = 'none';
+    document.getElementById('main-menu').style.display = 'flex';
+    });
+
+    // Initialize UI
+    window.gameUI.showMainMenu();
+    </script>
+</body>
+
 </html>

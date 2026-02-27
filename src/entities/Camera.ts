@@ -1,0 +1,139 @@
+import Phaser from 'phaser';
+
+export class CameraEntity {
+    public x: number;
+    public y: number;
+    public angle: number;
+    public fov: number;
+    public range: number;
+
+    private scene: Phaser.Scene;
+    private graphics: Phaser.GameObjects.Graphics;
+
+    private rotationSpeed: number = 0;
+    private rotMin: number = 0;
+    private rotMax: number = 0;
+    public rotationBounds?: [number, number];
+    private initialAngle: number;
+    private rotDir: number = 1;
+
+    private isDetected: boolean = false;
+
+    constructor(scene: Phaser.Scene, x: number, y: number, angle: number, fov: number, range: number, rotationSpeed?: number, rotationBounds?: [number, number]) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.initialAngle = angle;
+        this.fov = fov;
+        this.range = range;
+
+        if (rotationSpeed && rotationBounds) {
+            this.rotationSpeed = rotationSpeed;
+            this.rotMin = rotationBounds[0];
+            this.rotMax = rotationBounds[1];
+            this.rotationBounds = rotationBounds;
+        }
+
+        this.graphics = this.scene.add.graphics();
+        this.graphics.setDepth(10); // Render above floor, below player
+        this.drawCone();
+    }
+
+    update() {
+        if (this.rotationSpeed > 0) {
+            this.angle += this.rotationSpeed * this.rotDir;
+            if (this.angle >= this.rotMax) {
+                this.angle = this.rotMax;
+                this.rotDir = -1;
+            } else if (this.angle <= this.rotMin) {
+                this.angle = this.rotMin;
+                this.rotDir = 1;
+            }
+        }
+        this.drawCone();
+    }
+
+    private drawCone() {
+        this.graphics.clear();
+
+        // Convert to radians for math
+        const startAngle = Phaser.Math.DegToRad(this.angle - this.fov / 2);
+        const endAngle = Phaser.Math.DegToRad(this.angle + this.fov / 2);
+
+        const color = this.isDetected ? 0xff0000 : 0x4444ff;
+        const alpha = this.isDetected ? 0.5 : 0.2;
+
+        this.graphics.fillStyle(color, alpha);
+        this.graphics.slice(this.x, this.y, this.range, startAngle, endAngle, false);
+        this.graphics.fillPath();
+
+        // Draw camera body
+        this.graphics.fillStyle(0x888888, 1);
+        this.graphics.fillCircle(this.x, this.y, 8);
+    }
+
+    // Check if a target bounds is inside the vision cone
+    canSee(targetBounds: Phaser.Geom.Rectangle, walls: Phaser.Physics.Arcade.StaticGroup): boolean {
+        const targetCenter = new Phaser.Math.Vector2(targetBounds.centerX, targetBounds.centerY);
+        const cameraPos = new Phaser.Math.Vector2(this.x, this.y);
+
+        // 1. Check Distance
+        const dist = cameraPos.distance(targetCenter);
+        if (dist > this.range) return false;
+
+        // 2. Check Angle
+        // Phaser Math.Angle.Between returns angle in radians (-PI to PI)
+        const angleToTargetRad = Phaser.Math.Angle.BetweenPoints(cameraPos, targetCenter);
+        // Convert camera angle to radians
+        const camAngleRad = Phaser.Math.DegToRad(this.angle);
+
+        // Shortest angle difference in radians
+        let diff = Phaser.Math.Angle.Normalize(angleToTargetRad - camAngleRad);
+        if (diff > Math.PI) diff -= Phaser.Math.PI2;
+        if (diff < -Math.PI) diff += Phaser.Math.PI2;
+
+        // FOV is in degrees, convert to radians for comparison
+        const fovRad = Phaser.Math.DegToRad(this.fov);
+        if (Math.abs(diff) > fovRad / 2) return false;
+
+        // 3. Line of sight check (raycast)
+        const line = new Phaser.Geom.Line(this.x, this.y, targetCenter.x, targetCenter.y);
+        let blocked = false;
+
+        // Manual check against all wall bounding boxes
+        walls.getChildren().forEach(wallObj => {
+            if (blocked) return;
+
+            const wall = wallObj as Phaser.GameObjects.Rectangle;
+            // Get physical bounds of the static body
+            const body = wall.body as Phaser.Physics.Arcade.StaticBody;
+            if (!body) return;
+
+            const wallBounds = new Phaser.Geom.Rectangle(body.x, body.y, body.width, body.height);
+
+            if (Phaser.Geom.Intersects.LineToRectangle(line, wallBounds)) {
+                blocked = true;
+            }
+        });
+
+        return !blocked;
+    }
+
+    setDetected(detected: boolean) {
+        if (this.isDetected !== detected) {
+            this.isDetected = detected;
+            this.drawCone();
+        }
+    }
+
+    reset() {
+        this.angle = this.initialAngle;
+        this.rotDir = 1;
+        this.drawCone();
+    }
+
+    destroy() {
+        this.graphics.destroy();
+    }
+}
